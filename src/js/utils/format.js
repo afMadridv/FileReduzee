@@ -14,6 +14,17 @@ export function withSuffix(name, suffix) {
   return i > -1 ? `${name.slice(0, i)}${suffix}${name.slice(i)}` : `${name}${suffix}`;
 }
 
+// Agrega un sufijo y, si se pide, cambia la extensión:
+//   ("foto.png", "webp", "-comprimido") -> "foto-comprimido.webp"
+//   ("foto.png", null,   "-comprimido") -> "foto-comprimido.png"
+export function withExtension(name, ext, suffix = '') {
+  const i = name.lastIndexOf('.');
+  const base = i > -1 ? name.slice(0, i) : name;
+  const current = i > -1 ? name.slice(i + 1) : '';
+  const final = ext ?? current;
+  return final ? `${base}${suffix}.${final}` : `${base}${suffix}`;
+}
+
 // Extensión en minúsculas, o '' si el archivo no tiene.
 export function extensionOf(name) {
   return name.includes('.') ? name.split('.').pop().toLowerCase() : '';

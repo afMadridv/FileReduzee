@@ -34,15 +34,20 @@ en la fase 0, y no se suben sin una razón concreta.
 
 | Formato | Estrategia | ¿Sin pérdida real? |
 |---|---|---|
-| PNG / JPG / WEBP | `browser-image-compression`, calidad 92% | Pérdida perceptual mínima, no exacta a nivel de bytes |
+| PNG / JPG / WEBP | Se prueba WebP al 80% y el formato original al 80%; gana el más chico | No — con pérdida, aunque la resolución no se toca |
 | PDF | `pdf-lib`: limpia metadata, reescribe objetos | Sí — contenido visible intacto |
 | ZIP / DOCX / cualquier otro | `pako` (gzip) | Sí, pero el ahorro suele ser mínimo — ya vienen comprimidos |
 | RAR | No soportado | Crear `.rar` exige la herramienta con licencia de WinRAR; no existe códec libre |
 | MP3 / MP4 | Fase 2 — ver FASES.txt | — |
 
-Nota sobre PNG: hoy el ahorro puede ser cercano a cero, porque recodificar
-un PNG por canvas no lo optimiza de verdad. Eso lo resuelve la fase 3
-(oxipng), que sí es sin pérdida a nivel de bytes.
+Dos reglas transversales:
+
+- **Nunca se entrega algo más grande que el original.** Si toda
+  recodificación engorda el archivo — pasa con lo que ya viene comprimido —
+  se devuelve el original intacto y se dice así.
+- **Las imágenes se recodifican con pérdida.** La resolución no se toca y a
+  simple vista no se distingue, pero los píxeles no son idénticos. Para PNG
+  realmente sin pérdida, a nivel de bytes, está la fase 3 (oxipng).
 
 ## Correr en local
 

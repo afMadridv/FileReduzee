@@ -15,6 +15,7 @@ const clearBtn = document.getElementById('clearBtn');
 const outputBody = document.getElementById('outputBody');
 const outputEmpty = document.getElementById('outputEmpty');
 const downloadAllBtn = document.getElementById('downloadAllBtn');
+const deleteAllBtn = document.getElementById('deleteAllBtn');
 
 const lastDelta = document.getElementById('lastDelta');
 const lastBefore = document.getElementById('lastBefore');
@@ -56,11 +57,20 @@ dropzone.addEventListener('drop', (e) => {
   addFiles(e.dataTransfer.files);
 });
 
-clearBtn.addEventListener('click', () => {
-  // Lo ya encolado sigue procesándose; solo se limpia lo que se muestra.
+// Lo que ya está en el compresor termina igual; esto limpia lo que se muestra.
+function clearAll() {
   entries.length = 0;
   render();
-});
+}
+
+function removeEntry(entry) {
+  const i = entries.indexOf(entry);
+  if (i > -1) entries.splice(i, 1);
+  render();
+}
+
+clearBtn.addEventListener('click', clearAll);
+deleteAllBtn.addEventListener('click', clearAll);
 
 downloadAllBtn.addEventListener('click', () => {
   entries.filter((e) => e.status === 'done').forEach((e) => {
@@ -108,7 +118,16 @@ async function drain() {
           entry.reason = result.skipped;
         } else {
           entry.status = 'done';
-          entry.result = result;
+          // Una "compresión" que engorda el archivo no sirve de nada: pasa con
+          // lo que ya viene comprimido (zip, docx, jpg apretado). En ese caso
+          // se devuelve el original intacto en vez del resultado más grande.
+          entry.result = result.blob.size < entry.file.size
+            ? result
+            : {
+                blob: entry.file,
+                filename: entry.file.name,
+                note: 'Ya estaba en su mínimo: toda recodificación lo dejaba más grande, así que se devuelve el original sin tocar.',
+              };
         }
       } catch (err) {
         entry.status = 'failed';
@@ -215,6 +234,7 @@ function renderOutput() {
 
   outputEmpty.hidden = done.length > 0;
   downloadAllBtn.disabled = done.length === 0;
+  deleteAllBtn.disabled = entries.length === 0;
   outputBody.replaceChildren();
 
   done.forEach((entry) => {
@@ -245,16 +265,25 @@ function renderOutput() {
     tdDelta.className = label.startsWith('−') ? 'num output-delta' : 'num output-delta is-flat';
     tdDelta.textContent = label;
 
-    const tdDownload = document.createElement('td');
-    tdDownload.className = 'num';
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-ghost btn-row';
-    btn.textContent = 'Bajar';
-    btn.addEventListener('click', () => triggerDownload(entry.result.blob, entry.result.filename));
-    tdDownload.appendChild(btn);
+    const tdActions = document.createElement('td');
+    tdActions.className = 'num row-actions';
 
-    tr.append(tdName, tdBefore, tdAfter, tdDelta, tdDownload);
+    const downloadBtn = document.createElement('button');
+    downloadBtn.type = 'button';
+    downloadBtn.className = 'btn btn-ghost btn-row';
+    downloadBtn.textContent = 'Bajar';
+    downloadBtn.addEventListener('click', () => triggerDownload(entry.result.blob, entry.result.filename));
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-ghost btn-row btn-muted';
+    removeBtn.textContent = 'Quitar';
+    removeBtn.setAttribute('aria-label', `Quitar ${entry.file.name} de la lista`);
+    removeBtn.addEventListener('click', () => removeEntry(entry));
+
+    tdActions.append(downloadBtn, removeBtn);
+
+    tr.append(tdName, tdBefore, tdAfter, tdDelta, tdActions);
     outputBody.appendChild(tr);
   });
 }
