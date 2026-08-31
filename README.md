@@ -2,8 +2,8 @@
 
 Comprime archivos enteramente en el navegador — nada se sube a un servidor.
 
-Estado actual: **fase 1 terminada** (migración a Vite). El plan completo está
-en **FASES.txt**.
+Estado actual: **fase 1 terminada** (migración a Vite) más el rediseño
+"Nocturne" traído de Claude Design. El plan completo está en **FASES.txt**.
 
 ## Por qué esta estructura
 
@@ -89,6 +89,22 @@ src/
 FASES.txt                          plan completo para Claude Code
 ```
 
-Diseño visual: fuera de alcance por ahora. Se hará por separado en Claude
-Design. El HTML es semántico y el CSS está desacoplado de la lógica a
-propósito, para que ese rediseño no tenga que tocar `src/js/`.
+## Diseño
+
+El diseño se hizo por separado en Claude Design ("Nocturne", oscuro) y se
+implementó acá. El canvas exporta estilos inline; en el repo viven como
+clases en `src/css/style.css`, para que la lógica de `src/js/` no dependa
+del CSS y el próximo rediseño no tenga que tocarla.
+
+La maqueta usaba datos inventados (ratios fijos por extensión, progreso
+simulado, tabla de ejemplo). Acá todo sale de los compresores reales. Tres
+cosas que la maqueta no contemplaba y sí existen:
+
+- **Errores y omitidos** — `.rar`, audio/vídeo y archivos corruptos. Fila
+  en gris con el motivo, sin romper el resto de la cola.
+- **Progreso real** — los compresores no emiten eventos de progreso, así
+  que la barra es indeterminada mientras trabajan. Un porcentaje inventado
+  sería mentir.
+- **La nota por formato** ("sin pérdida" o no) va bajo el nombre en la
+  tabla de salida. Es el núcleo honesto del proyecto; la maqueta la había
+  dejado fuera.

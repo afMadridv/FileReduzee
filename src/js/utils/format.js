@@ -1,16 +1,22 @@
-// Formatea bytes en unidades legibles (B, KB, MB, GB).
+// Formatea bytes con el mismo criterio que el diseño: MB/GB con un decimal,
+// KB redondeado a entero, bytes tal cual. (El diseño no contemplaba GB; se
+// agregó porque un archivo real puede pasar el giga.)
 export function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const value = bytes / Math.pow(1024, i);
-  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+  if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
+  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
 }
 
 // Inserta un sufijo antes de la extensión: "foto.png" -> "foto-comprimido.png"
 export function withSuffix(name, suffix) {
   const i = name.lastIndexOf('.');
   return i > -1 ? `${name.slice(0, i)}${suffix}${name.slice(i)}` : `${name}${suffix}`;
+}
+
+// Extensión en minúsculas, o '' si el archivo no tiene.
+export function extensionOf(name) {
+  return name.includes('.') ? name.split('.').pop().toLowerCase() : '';
 }
 
 // Dispara la descarga de un Blob con el nombre indicado.

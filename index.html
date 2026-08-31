@@ -5,48 +5,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FileReduzee — reduce el peso de tus archivos</title>
 <meta name="description" content="Comprime imágenes, PDF y otros archivos sin subirlos a ningún servidor. Todo ocurre en tu navegador.">
+<meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/src/css/style.css">
 </head>
 <body>
-  <header class="topbar">
-    <span class="brand">FileReduzee</span>
-    <span class="tagline">Nada sale de tu navegador</span>
-  </header>
+  <div class="page">
+  <!-- Capas decorativas del diseño Nocturne: resplandor, trama diagonal y rejilla. -->
+  <div class="backdrop backdrop-glow" aria-hidden="true"></div>
+  <div class="backdrop backdrop-hatch" aria-hidden="true"></div>
+  <div class="backdrop backdrop-grid" aria-hidden="true"></div>
 
-  <main>
-    <section class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Elegir o soltar un archivo">
-      <input type="file" id="fileInput" hidden>
-      <p class="dropzone-title">Suelta un archivo aquí</p>
-      <p class="dropzone-sub">o haz clic para elegir uno</p>
-      <p class="dropzone-formats">png, jpg, pdf, zip, docx y más</p>
-    </section>
+  <div class="shell">
+    <aside class="rail" aria-hidden="true">
+      <span class="rail-dot"></span>
+      <span class="rail-label">Unidad de compresión local · rev 05</span>
+      <span class="rail-code">FR—02</span>
+    </aside>
 
-    <section class="status" id="status" hidden>
-      <p id="statusText"></p>
-    </section>
+    <div class="stack">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-name">FILEREDUZEE</span>
+          <span class="brand-version">v0.5 · wasm</span>
+        </div>
+        <p class="privacy-chip">
+          <span class="privacy-dot"></span>
+          <span>Nada sale de tu navegador</span>
+        </p>
+      </header>
 
-    <section class="result" id="result" hidden>
-      <p class="result-name" id="resultName"></p>
-      <div class="result-bar">
-        <div class="result-bar-fill" id="resultBarFill"></div>
-      </div>
-      <div class="result-sizes">
-        <span id="resultBefore"></span>
-        <span class="result-arrow">→</span>
-        <span id="resultAfter"></span>
-        <span class="result-pct" id="resultPct"></span>
-      </div>
-      <p class="result-note" id="resultNote"></p>
-      <a class="btn-download" id="downloadBtn" href="#" hidden>Descargar</a>
-    </section>
-  </main>
+      <main class="main">
+        <section class="hero">
+          <h1 class="hero-title">Reduce<br><span class="hero-title-soft">en local</span></h1>
+          <p class="hero-note">Cada formato usa su propia estrategia. Detalle honesto de qué es sin pérdida y qué no, en el README del proyecto.</p>
+        </section>
 
-  <footer class="foot">
-    <p>Cada formato usa su propia estrategia. Detalle honesto de qué es sin pérdida y qué no, en el README del proyecto.</p>
-  </footer>
+        <section class="intake">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Elegir o soltar archivos">
+            <div class="dropzone-scan" aria-hidden="true"><span></span></div>
+            <span class="dropzone-pin dropzone-pin-tl" aria-hidden="true"></span>
+            <span class="dropzone-pin dropzone-pin-tr" aria-hidden="true"></span>
+            <span class="dropzone-pin dropzone-pin-bl" aria-hidden="true"></span>
+            <span class="dropzone-pin dropzone-pin-br" aria-hidden="true"></span>
+
+            <div class="dropzone-copy">
+              <span class="dropzone-title">Suelta un archivo aquí</span>
+              <span class="dropzone-sub">o haz clic para elegir uno</span>
+              <span class="dropzone-formats">png / jpg / pdf / zip / docx</span>
+            </div>
+            <div class="dropzone-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 256 256" fill="currentColor"><path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0ZM93.66,85.66,120,59.31V152a8,8,0,0,0,16,0V59.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,85.66Z"></path></svg>
+            </div>
+            <input type="file" id="fileInput" multiple hidden>
+          </div>
+
+          <div class="lastpass">
+            <span class="eyebrow">Última pasada</span>
+            <p class="lastpass-delta">
+              <span id="lastDelta">—</span><span class="lastpass-unit">%</span>
+            </p>
+            <p class="lastpass-sizes">
+              <span id="lastBefore">—</span>
+              <span class="lastpass-arrow">→</span>
+              <span id="lastAfter">—</span>
+            </p>
+          </div>
+        </section>
+
+        <section class="queue">
+          <div class="queue-head">
+            <span class="eyebrow">Cola — <span id="queueCount">0 archivos</span></span>
+            <button type="button" class="btn btn-ghost btn-micro" id="clearBtn">Vaciar</button>
+          </div>
+          <ul class="queue-list" id="queueList"></ul>
+          <p class="queue-empty" id="queueEmpty">Sin archivos en cola</p>
+        </section>
+
+        <section class="output">
+          <span class="eyebrow">Salida</span>
+          <div class="output-panel">
+            <table class="output-table">
+              <thead>
+                <tr>
+                  <th scope="col">Archivo</th>
+                  <th scope="col" class="num">Antes</th>
+                  <th scope="col" class="num">Después</th>
+                  <th scope="col" class="num">Δ</th>
+                  <th scope="col" class="num">Descargar</th>
+                </tr>
+              </thead>
+              <tbody id="outputBody"></tbody>
+            </table>
+            <p class="output-empty" id="outputEmpty">Todavía no hay resultados.</p>
+          </div>
+          <div class="output-actions">
+            <button type="button" class="btn btn-primary" id="downloadAllBtn" disabled>Descargar todo</button>
+            <a class="btn btn-ghost btn-muted" href="https://github.com/afMadridv/FileReduzee#readme" target="_blank" rel="noopener">Ver README</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="foot">
+        <span>Procesado en memoria · sin telemetría</span>
+        <span>README del proyecto</span>
+      </footer>
+    </div>
+  </div>
+  </div>
 
   <!-- Las librerías (pako, browser-image-compression, pdf-lib) ya no vienen de un
        CDN: se instalan por npm y las importa cada compresor. Ver FASES.txt, fase 1. -->
