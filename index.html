@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileReduzee — reduce el peso de tus archivos</title>
+<meta name="description" content="Comprime imágenes, PDF y otros archivos sin subirlos a ningún servidor. Todo ocurre en tu navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">FileReduzee</span>
+    <span class="tagline">Nada sale de tu navegador</span>
+  </header>
+
+  <main>
+    <section class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Elegir o soltar un archivo">
+      <input type="file" id="fileInput" hidden>
+      <p class="dropzone-title">Suelta un archivo aquí</p>
+      <p class="dropzone-sub">o haz clic para elegir uno</p>
+      <p class="dropzone-formats">png, jpg, pdf, zip, docx y más</p>
+    </section>
+
+    <section class="status" id="status" hidden>
+      <p id="statusText"></p>
+    </section>
+
+    <section class="result" id="result" hidden>
+      <p class="result-name" id="resultName"></p>
+      <div class="result-bar">
+        <div class="result-bar-fill" id="resultBarFill"></div>
+      </div>
+      <div class="result-sizes">
+        <span id="resultBefore"></span>
+        <span class="result-arrow">→</span>
+        <span id="resultAfter"></span>
+        <span class="result-pct" id="resultPct"></span>
+      </div>
+      <p class="result-note" id="resultNote"></p>
+      <a class="btn-download" id="downloadBtn" href="#" hidden>Descargar</a>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Cada formato usa su propia estrategia. Detalle honesto de qué es sin pérdida y qué no, en el README del proyecto.</p>
+  </footer>
+
+  <!-- Las librerías (pako, browser-image-compression, pdf-lib) ya no vienen de un
+       CDN: se instalan por npm y las importa cada compresor. Ver FASES.txt, fase 1. -->
+  <script type="module" src="/src/js/main.js"></script>
+</body>
+</html>

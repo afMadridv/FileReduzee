@@ -1,0 +1,207 @@
+FileReduzee — plan de fases para Claude Code
+==============================================
+
+CONTEXTO
+--------
+Este zip trae la Fase 0 ya construida y funcionando: un compresor de
+archivos que corre 100% en el navegador (sin servidor, sin build step).
+Los detalles de qué hace cada compresor y por qué están en README.md —
+léelo antes de tocar código.
+
+Diseño visual: FUERA DE ALCANCE en este documento. El diseño se hará
+después, por separado, en Claude Design. En cada fase, prioriza que la
+funcionalidad sea correcta y que el código quede desacoplado del CSS
+actual (HTML semántico, clases descriptivas, sin lógica de negocio en el
+CSS) — así el rediseño posterior no tiene que tocar la lógica interna. No
+inviertas tiempo en pulir visualmente más allá de lo que ya existe.
+
+Despliegue: Vercel. No Netlify — si aparece algún rastro de eso en el
+historial, es de una iteración anterior y ya no aplica.
+
+PRINCIPIO QUE GOBIERNA TODO ESTO
+---------------------------------
+Después de cada fase: desplegar a Vercel y confirmar en producción antes
+de pasar a la siguiente. No acumules varias fases sin desplegar — así
+cualquier fallo se detecta apenas aparece, no al final cuando ya es caro
+de diagnosticar. Esto fue la prioridad número uno desde el diseño
+original de la Fase 0 y sigue siéndolo para todo lo que sigue.
+
+Cada fase de abajo tiene: qué construir, por qué en ese orden, y un
+criterio de aceptación verificable. No des una fase por terminada si no
+cumple su criterio de aceptación.
+
+
+FASE 0 — Fundación (ya incluida en este zip, no reconstruir)
+---------------------------------------------------------------
+Qué hay: sitio estático sin build (HTML/CSS/JS planos), sin servidor.
+Compresión de imágenes (browser-image-compression), PDF (pdf-lib) y
+respaldo genérico para cualquier otro archivo (pako/gzip). Detalle
+completo de qué es sin pérdida y qué no, por formato, en README.md.
+
+Por qué así: sin backend no hay binarios nativos (ffmpeg, Ghostscript)
+que puedan faltar en producción — la causa más común de "funciona en mi
+máquina, falla en el servidor" para este tipo de herramienta. Cada
+librería se verificó como usable vía CDN sin empaquetador antes de
+entrar al proyecto.
+
+Acción para Claude Code: ninguna todavía. Solo confirmar que corre igual
+que antes (`npx serve .`, probar los tres tipos de archivo) antes de
+empezar la Fase 1.
+
+
+FASE 1 — Migrar a Vite sin romper nada
+------------------------------------------
+Objetivo: introducir un empaquetador como refactor puro. Cero funciones
+nuevas, cero cambios visibles. Esta fase existe porque las Fases 2 y 3
+necesitan un empaquetador (la razón técnica está en cada una) — migrar
+primero, aislado, hace que si algo se rompe después, se sepa que fue la
+migración y no una función nueva mezclada con ella.
+
+Tareas:
+1. `npm create vite@latest` — plantilla vanilla, sin framework. El
+   proyecto actual es JS plano y no hay razón para sumar React/Vue aquí.
+2. Mover js/ a src/js/ (o donde Vite lo espere) y css/ a src/css/,
+   manteniendo la misma división de archivos que ya existe: main.js,
+   compressors/*.js, utils/format.js.
+3. Ajustar rutas de import si Vite las requiere distintas.
+4. Las tres librerías actuales (pako, browser-image-compression,
+   pdf-lib) pueden quedarse vía CDN + script tag, o migrarse a
+   `npm install` + `import`. Cualquiera de las dos funciona con Vite. Si
+   se migran a npm, usar estas versiones exactas para no romper nada ya
+   verificado: pako@2.1.0, browser-image-compression@1.0.13,
+   pdf-lib@1.4.0.
+
+Criterio de aceptación: `npm run build && npm run preview`, probar los
+tres tipos de archivo (imagen, PDF, archivo genérico) — mismo resultado
+que en la Fase 0, sin diferencia visible ni funcional. Desplegar a
+Vercel y repetir la prueba ahí.
+
+
+FASE 2 — Audio y vídeo reales (ffmpeg.wasm)
+------------------------------------------------
+Depende de: Fase 1 terminada y desplegada.
+
+Por qué se dejó para después: el paquete @ffmpeg/ffmpeg lanza un Web
+Worker que debe compartir origen con la página bajo aislamiento
+cross-origin — no se puede importar de forma confiable desde un CDN
+suelto sin empaquetador. Por eso no estaba en la Fase 0.
+
+Tareas:
+1. `npm install @ffmpeg/ffmpeg @ffmpeg/util`. Punto de partida sugerido:
+   @ffmpeg/ffmpeg@0.12.15 (revisar si hay una versión estable más nueva
+   al momento de implementar). Usar una versión de @ffmpeg/core que
+   coincida con la de @ffmpeg/ffmpeg instalada — un desajuste entre
+   ambas es la causa más común de error al inicializar el worker.
+2. Implementar compressMedia() en compressors/media.js — ya tiene el
+   contrato listo: recibe un File, devuelve { blob, filename, note } o
+   { skipped }, igual que image.js y document.js.
+3. Usar el core de UN SOLO HILO (@ffmpeg/core, NO @ffmpeg/core-mt). El
+   core -mt es más rápido pero exige los headers
+   Cross-Origin-Opener-Policy / Cross-Origin-Embedder-Policy en todo el
+   sitio, lo que puede romper embeds o scripts de terceros más
+   adelante. No vale la pena ese riesgo para esta app.
+4. Mostrar progreso real: ffmpeg.wasm emite eventos 'progress' — usarlos
+   en vez de un spinner genérico.
+5. Etiquetar la operación como CON pérdida en la UI — recodificar
+   siempre implica una decisión de calidad/bitrate. No repetir el error
+   de prometer "sin pérdida" donde no aplica. Alcanza con dejar elegir
+   entre un preset "equilibrado" (CRF 23) y uno "agresivo" (CRF 28 +
+   reducción de resolución).
+6. Avisar en la UI cuando el archivo supere ~300MB: el navegador puede
+   volverse lento o el tab puede cerrarse por memoria. No hace falta
+   resolverlo en esta fase, solo avisar con claridad.
+
+Criterio de aceptación: convierte un mp3 y un mp4 de prueba sin romper
+ninguna de las rutas ya existentes (imagen, PDF, genérico). Probado en
+Chrome y Firefox como mínimo. Desplegado y verificado en Vercel.
+
+
+FASE 3 — PNG sin pérdida real (oxipng)
+-------------------------------------------
+Depende de: Fase 1 terminada. Independiente de la Fase 2 — se puede
+hacer antes, después, o en paralelo.
+
+Por qué ahora y no en la Fase 0: @jsquash/oxipng necesita un
+empaquetador para manejar sus archivos .wasm — mismo motivo que
+ffmpeg, pero sin el problema del Web Worker cross-origin, así que es
+más simple de sumar.
+
+Tareas:
+1. `npm install @jsquash/oxipng`
+2. En compressors/image.js: para archivos PNG específicamente, usar
+   oxipng en vez de (o antes que) browser-image-compression. Nivel de
+   optimización 3 — el propio paquete no recomienda pasar de 4.
+3. Dejar browser-image-compression tal cual para JPG/WEBP, y como
+   opción "más chico, con pérdida" para PNG si el usuario la prefiere
+   sobre el resultado sin pérdida.
+4. Actualizar la nota que se muestra en el resultado: ahora sí se puede
+   decir "sin pérdida" para PNG de verdad, a nivel de bytes.
+
+Criterio de aceptación: comprimir un PNG y confirmar que los píxeles
+son idénticos al original (decodificar ambos y comparar) y que el
+archivo pesa menos. Desplegado y verificado en Vercel.
+
+
+FASE 4 — ZIP y DOCX inteligentes
+--------------------------------------
+Depende de: Fase 1. Da mejores resultados si la Fase 3 ya está lista,
+porque puede reusar el optimizador de PNG para las imágenes internas.
+
+Por qué: la Fase 0 solo envuelve estos archivos en gzip, y como ya
+vienen comprimidos, el ahorro real es casi nulo. La ganancia de verdad
+está en abrir el zip interno y optimizar lo que trae adentro.
+
+Tareas:
+1. Sumar una librería de zip para el navegador (fflate es liviana y no
+   necesita empaquetador; con Vite ya en el proyecto, cualquiera de las
+   alternativas comunes sirve).
+2. Para .docx, .xlsx, .pptx y .zip: desempaquetar, recorrer las
+   imágenes internas (en los formatos de Office suelen estar en
+   word/media/, xl/media/, etc.), pasarlas por el optimizador de
+   imágenes de la Fase 3, re-empaquetar.
+3. Si el archivo no es un zip reconocible o el desempaquetado falla,
+   volver al respaldo de la Fase 0 (gzip completo) sin romper el flujo.
+4. Mantener el respaldo gzip genérico para cualquier tipo de archivo
+   que no sea zip, docx, xlsx, pptx ni pdf.
+
+Criterio de aceptación: un .docx con imágenes grandes adentro pesa
+notablemente menos después de procesarlo, y sigue abriendo
+correctamente en Word o LibreOffice. Desplegado y verificado en Vercel.
+
+
+FASE 5 — RAR (documentar el límite, lectura opcional)
+------------------------------------------------------------
+Prioridad baja — se puede dejar para el final o saltar del todo.
+
+Crear archivos .rar no es posible sin la herramienta con licencia de
+WinRAR; no existe códec libre para eso, y no se va a intentar simular.
+Lo único opcional acá es permitir LEER un .rar existente (con una
+librería libre de solo lectura, por ejemplo libarchive.js) para poder
+recomprimir su contenido como .zip optimizado. Si se decide no
+hacerlo, dejar el mensaje actual de la Fase 0 tal cual — es honesto y
+explica el motivo.
+
+
+QA Y ENDURECIMIENTO (transversal, no es una fase separada)
+------------------------------------------------------------------
+Antes de dar cualquier fase por cerrada, probar al menos:
+- Un archivo sin extensión.
+- Un archivo corrupto o incompleto — confirmar que el error se muestra
+  con claridad, sin romper el resto de la página.
+- Un archivo de 0 bytes.
+- Navegación solo con teclado hasta la zona de soltar archivos.
+- Que ninguna operación deje la interfaz sin respuesta visible por más
+  de un par de segundos.
+
+
+RESUMEN DE ORDEN RECOMENDADO
+-----------------------------------
+Fase 0 (ya hecha)
+  -> Fase 1: Vite, sin funciones nuevas
+  -> desplegar y verificar
+  -> Fase 2 y Fase 3, en cualquier orden (son independientes entre sí)
+  -> desplegar y verificar cada una por separado
+  -> Fase 4
+  -> desplegar y verificar
+  -> Fase 5 (opcional)
+  -> QA transversal en cada fase, no solo al final.
