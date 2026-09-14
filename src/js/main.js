@@ -21,16 +21,32 @@ const lastDelta = document.getElementById('lastDelta');
 const lastBefore = document.getElementById('lastBefore');
 const lastAfter = document.getElementById('lastAfter');
 
+const presetGroup = document.getElementById('presetGroup');
+
 const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp'];
 const PDF_EXTS = ['pdf'];
-const MEDIA_EXTS = ['mp3', 'wav', 'mp4', 'mov', 'webm', 'mkv'];
+const MEDIA_EXTS = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'mp4', 'mov', 'webm', 'mkv', 'avi', 'm4v'];
 const NO_FREE_ENCODER_EXTS = ['rar'];
 
-// Cada entrada: { id, file, ext, status, result?, reason? }
+// Cada entrada: { id, file, ext, status, result?, reason?, percent?, stage? }
 // status: 'pending' | 'processing' | 'done' | 'failed'
 const entries = [];
 let nextId = 0;
 let draining = false;
+
+// Sólo lo usa audio/vídeo; el resto de formatos no tiene esta perilla.
+let preset = 'agresivo';
+
+presetGroup.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-preset]');
+  if (!btn) return;
+  preset = btn.dataset.preset;
+  presetGroup.querySelectorAll('[data-preset]').forEach((b) => {
+    const activo = b.dataset.preset === preset;
+    b.classList.toggle('is-active', activo);
+    b.setAttribute('aria-pressed', String(activo));
+  });
+});
 
 /* --- Entrada de archivos ------------------------------------------------ */
 
@@ -109,10 +125,16 @@ async function drain() {
       if (!entry) break;
 
       entry.status = 'processing';
+      entry.percent = null;
+      entry.stage = null;
       render();
 
       try {
-        const result = await routeFile(entry.file);
+        const result = await routeFile(entry.file, ({ percent, stage }) => {
+          entry.percent = percent;
+          entry.stage = stage;
+          renderQueue();
+        });
         if (result.skipped) {
           entry.status = 'failed';
           entry.reason = result.skipped;
@@ -142,12 +164,12 @@ async function drain() {
   }
 }
 
-async function routeFile(file) {
+async function routeFile(file, onProgress) {
   const ext = extensionOf(file.name);
 
   if (IMAGE_EXTS.includes(ext)) return compressImage(file);
   if (PDF_EXTS.includes(ext)) return compressDocument(file);
-  if (MEDIA_EXTS.includes(ext)) return compressMedia(file);
+  if (MEDIA_EXTS.includes(ext)) return compressMedia(file, onProgress, preset);
 
   if (NO_FREE_ENCODER_EXTS.includes(ext)) {
     return {
@@ -199,9 +221,22 @@ function renderQueue() {
     bar.className = 'queue-bar';
     const fill = document.createElement('span');
     fill.className = 'queue-bar-fill';
+    // Sólo ffmpeg.wasm reporta progreso real. Cuando lo hay, la barra deja de
+    // ser indeterminada y marca el porcentaje de verdad.
+    if (entry.status === 'processing' && typeof entry.percent === 'number') {
+      row.classList.add('has-progress');
+      fill.style.width = `${entry.percent}%`;
+    }
     bar.appendChild(fill);
 
     main.append(name, bar);
+
+    if (entry.status === 'processing' && entry.stage) {
+      const stage = document.createElement('span');
+      stage.className = 'queue-reason';
+      stage.textContent = entry.stage;
+      main.appendChild(stage);
+    }
 
     if (entry.status === 'failed') {
       const reason = document.createElement('span');
@@ -222,7 +257,9 @@ function renderQueue() {
     delta.className = 'queue-delta';
     delta.textContent = entry.status === 'done'
       ? deltaLabel(entry.file.size, entry.result.blob.size)
-      : entry.status === 'processing' ? '···' : '—';
+      : entry.status === 'processing'
+        ? (typeof entry.percent === 'number' ? `${Math.round(entry.percent)}%` : '···')
+        : '—';
 
     row.append(ext, main, before, after, delta);
     queueList.appendChild(row);

@@ -49,7 +49,7 @@
             <div class="dropzone-copy">
               <span class="dropzone-title">Suelta un archivo aquí</span>
               <span class="dropzone-sub">o haz clic para elegir uno</span>
-              <span class="dropzone-formats">png / jpg / pdf / zip / docx</span>
+              <span class="dropzone-formats">png / jpg / pdf / mp4 / mp3 / zip / docx</span>
             </div>
             <div class="dropzone-icon" aria-hidden="true">
               <svg width="26" height="26" viewBox="0 0 256 256" fill="currentColor"><path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0ZM93.66,85.66,120,59.31V152a8,8,0,0,0,16,0V59.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,85.66Z"></path></svg>
@@ -73,7 +73,14 @@
         <section class="queue">
           <div class="queue-head">
             <span class="eyebrow">Cola — <span id="queueCount">0 archivos</span></span>
-            <button type="button" class="btn btn-ghost btn-micro" id="clearBtn">Vaciar</button>
+            <div class="queue-tools">
+              <span class="preset-label">Audio y vídeo</span>
+              <div class="preset-group" id="presetGroup" role="group" aria-label="Nivel de compresión para audio y vídeo">
+                <button type="button" class="btn btn-micro preset-btn" data-preset="equilibrado" aria-pressed="false">Equilibrado</button>
+                <button type="button" class="btn btn-micro preset-btn is-active" data-preset="agresivo" aria-pressed="true">Agresivo</button>
+              </div>
+              <button type="button" class="btn btn-ghost btn-micro" id="clearBtn">Vaciar</button>
+            </div>
           </div>
           <ul class="queue-list" id="queueList"></ul>
           <p class="queue-empty" id="queueEmpty">Sin archivos en cola</p>

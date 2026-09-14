@@ -38,7 +38,24 @@ en la fase 0, y no se suben sin una razón concreta.
 | PDF | `pdf-lib`: limpia metadata, reescribe objetos | Sí — contenido visible intacto |
 | ZIP / DOCX / cualquier otro | `pako` (gzip) | Sí, pero el ahorro suele ser mínimo — ya vienen comprimidos |
 | RAR | No soportado | Crear `.rar` exige la herramienta con licencia de WinRAR; no existe códec libre |
-| MP3 / MP4 | Fase 2 — ver FASES.txt | — |
+| MP4 / MOV / WEBM / MKV | `ffmpeg.wasm`: H.264 CRF 23 o 28, audio AAC | No — con pérdida |
+| MP3 / WAV / M4A / OGG | `ffmpeg.wasm`: MP3 a 128k o 192k | No — con pérdida |
+
+### Límite de tamaño en audio y vídeo
+
+`ffmpeg.wasm` es wasm32: tope de 4 GB de espacio de direcciones, y el archivo
+entero tiene que entrar en su sistema de archivos en memoria antes de tocarlo
+—entrada, frames decodificados y salida, todo en RAM a la vez—. Por eso hay
+un tope explícito en **1 GB**: arriba de eso la app lo rechaza con una
+explicación en vez de dejar que se muera la pestaña sin decir nada. Arriba de
+300 MB funciona, pero lento y según la máquina.
+
+Un archivo más grande que eso necesita una herramienta de escritorio
+(HandBrake, ffmpeg). No es algo que se arregle con código: es el techo de
+correr un transcodificador dentro del navegador.
+
+El motor pesa ~31 MB de `.wasm` y se descarga sólo cuando llega el primer
+archivo de audio o vídeo, nunca al abrir la página.
 
 Dos reglas transversales:
 
@@ -88,7 +105,7 @@ src/
       image.js               PNG / JPG / WEBP
       document.js              PDF
       generic.js                 respaldo universal (gzip)
-      media.js                     stub — fase 2, ver FASES.txt
+      media.js                     audio y vídeo (ffmpeg.wasm)
     utils/
       format.js                    bytes legibles + disparo de descarga
 FASES.txt                          plan completo para Claude Code
