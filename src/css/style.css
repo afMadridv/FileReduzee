@@ -41,6 +41,13 @@
   box-sizing: border-box;
 }
 
+/* Sin esto, cualquier clase con display (como .main, que es flex) le gana
+   al display:none que el navegador aplica a [hidden], y los paneles ocultos
+   se siguen viendo. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -210,6 +217,46 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-neutral-600);
+}
+
+/* --- Pestañas ----------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(233, 233, 237, 0.03);
+}
+
+.tab {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-neutral-500);
+  background: transparent;
+  border: 0;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.tab + .tab {
+  border-left: 1px solid var(--line);
+}
+
+.tab:hover {
+  color: var(--color-neutral-200);
+}
+
+.tab.is-active {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.tab:focus-visible {
+  outline-offset: -2px;
 }
 
 .foot-link {
@@ -569,6 +616,96 @@ body {
   white-space: normal;
 }
 
+/* --- Cola de conversión -------------------------------------------------- */
+
+.queue-row.convert-row {
+  grid-template-columns: 56px minmax(0, 1fr) 210px 80px 170px;
+}
+
+.convert-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.convert-pick-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-neutral-700);
+}
+
+.convert-select {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral-200);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--color-neutral-500) 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--color-neutral-500) 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat,
+    var(--color-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 26px 7px 10px;
+  cursor: pointer;
+}
+
+.convert-select:hover:not(:disabled) {
+  border-color: var(--color-accent-600);
+}
+
+.convert-select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.convert-select option {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.convert-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.queue-row.convert-row.is-done .queue-reason {
+  color: var(--color-accent-300);
+}
+
+.queue-row.convert-row.is-unsupported .queue-bar-fill,
+.queue-row.convert-row.is-idle .queue-bar-fill {
+  width: 0;
+}
+
+.convert-last {
+  flex-wrap: wrap;
+}
+
+/* --- Tabla de formatos --------------------------------------------------- */
+
+.formats-table td {
+  font-size: 12px;
+}
+
+.formats-family {
+  white-space: nowrap;
+  color: var(--color-neutral-200);
+}
+
+.formats-list {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral-400);
+  line-height: 1.7;
+}
+
 .queue-empty {
   margin: 0;
   padding: 30px 2px;
@@ -776,6 +913,15 @@ body {
   .intake { grid-template-columns: 1fr; }
   .dropzone { flex-direction: column; align-items: flex-start; padding: 28px 22px; min-height: 0; }
   .dropzone-title { font-size: 27px; white-space: normal; }
+  .dropzone-copy { width: 100%; }
+  .dropzone-formats { white-space: normal; line-height: 1.7; }
   .queue-row { grid-template-columns: 44px 1fr 74px; row-gap: 8px; }
   .queue-row .queue-num { grid-column: 2 / 4; }
+  .queue-row.convert-row { grid-template-columns: 44px 1fr; }
+  .queue-row.convert-row > .convert-pick,
+  .queue-row.convert-row > .queue-num,
+  .queue-row.convert-row > .convert-actions { grid-column: 2 / 3; }
+  .queue-row.convert-row > .queue-num { text-align: left; }
+  .convert-actions { justify-content: flex-start; }
+  .topbar { flex-wrap: wrap; }
 }

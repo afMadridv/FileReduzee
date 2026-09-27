@@ -3,6 +3,8 @@ import { compressDocument } from './compressors/document.js';
 import { compressGeneric } from './compressors/generic.js';
 import { compressMedia } from './compressors/media.js';
 import { formatBytes, extensionOf, triggerDownload } from './utils/format.js';
+import './tabs.js';
+import './convert/index.js';
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');

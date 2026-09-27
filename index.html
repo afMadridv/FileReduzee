@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FileReduzee — reduce el peso de tus archivos</title>
-<meta name="description" content="Comprime imágenes, PDF y otros archivos sin subirlos a ningún servidor. Todo ocurre en tu navegador.">
+<title>FileReduzee — comprime y convierte tus archivos</title>
+<meta name="description" content="Comprime y convierte documentos, imágenes, hojas de cálculo, audio y vídeo sin subirlos a ningún servidor. Todo ocurre en tu navegador.">
 <meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,11 +29,15 @@
       <header class="topbar">
         <div class="brand">
           <span class="brand-name">FILEREDUZEE</span>
-          <span class="brand-version">v0.5 · wasm</span>
+          <span class="brand-version">v0.6 · wasm</span>
         </div>
+        <nav class="tabs" role="tablist" aria-label="Herramientas">
+          <button type="button" class="tab is-active" role="tab" id="tab-comprimir" data-tab="comprimir" aria-controls="panel-comprimir" aria-selected="true">Comprimir</button>
+          <button type="button" class="tab" role="tab" id="tab-convertir" data-tab="convertir" aria-controls="panel-convertir" aria-selected="false" tabindex="-1">Convertir</button>
+        </nav>
       </header>
 
-      <main class="main">
+      <main class="main" id="panel-comprimir" role="tabpanel" aria-labelledby="tab-comprimir">
         <section class="hero">
           <h1 class="hero-title">Reduce<br><span class="hero-title-soft">Tu Archivo</span></h1>
         </section>
@@ -106,6 +110,96 @@
           <div class="output-actions">
             <button type="button" class="btn btn-primary" id="downloadAllBtn" disabled>Descargar todo</button>
             <button type="button" class="btn btn-ghost btn-muted" id="deleteAllBtn" disabled>Borrar todo</button>
+          </div>
+        </section>
+      </main>
+
+      <main class="main" id="panel-convertir" role="tabpanel" aria-labelledby="tab-convertir" hidden>
+        <section class="hero">
+          <h1 class="hero-title">Convierte<br><span class="hero-title-soft">Tu Archivo</span></h1>
+        </section>
+
+        <section class="intake">
+          <div class="dropzone" id="cvDropzone" tabindex="0" role="button" aria-label="Elegir o soltar archivos para convertir">
+            <div class="dropzone-scan" aria-hidden="true"><span></span></div>
+            <span class="dropzone-pin dropzone-pin-tl" aria-hidden="true"></span>
+            <span class="dropzone-pin dropzone-pin-tr" aria-hidden="true"></span>
+            <span class="dropzone-pin dropzone-pin-bl" aria-hidden="true"></span>
+            <span class="dropzone-pin dropzone-pin-br" aria-hidden="true"></span>
+
+            <div class="dropzone-copy">
+              <span class="dropzone-title">Suelta un archivo aquí</span>
+              <span class="dropzone-sub">y elige a qué formato pasarlo</span>
+              <span class="dropzone-formats">docx / pdf / md / png / jpg / xlsx / csv / mp4 / mp3 …</span>
+            </div>
+            <div class="dropzone-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27,96,96,0,0,1,193.37,62L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"></path></svg>
+            </div>
+            <input type="file" id="cvFileInput" multiple hidden>
+          </div>
+
+          <div class="lastpass">
+            <span class="eyebrow">Última conversión</span>
+            <p class="lastpass-delta convert-last">
+              <span class="lastpass-unit" id="cvLastFrom">—</span>
+              <span class="lastpass-unit" aria-hidden="true">→</span>
+              <span id="cvLastTo">—</span>
+            </p>
+            <p class="lastpass-sizes">
+              <span id="cvLastBefore">—</span>
+              <span class="lastpass-arrow">→</span>
+              <span id="cvLastAfter">—</span>
+            </p>
+          </div>
+        </section>
+
+        <section class="queue">
+          <div class="queue-head">
+            <span class="eyebrow">Cola — <span id="cvQueueCount">0 archivos</span></span>
+            <div class="queue-tools">
+              <button type="button" class="btn btn-primary btn-micro" id="cvConvertAllBtn" disabled>Convertir todo</button>
+              <button type="button" class="btn btn-ghost btn-micro" id="cvClearBtn">Vaciar</button>
+            </div>
+          </div>
+          <ul class="queue-list" id="cvQueueList"></ul>
+          <p class="queue-empty" id="cvQueueEmpty">Sin archivos en cola</p>
+        </section>
+
+        <section class="output">
+          <span class="eyebrow">Salida</span>
+          <div class="output-panel">
+            <table class="output-table">
+              <thead>
+                <tr>
+                  <th scope="col">Archivo</th>
+                  <th scope="col" class="num">Conversión</th>
+                  <th scope="col" class="num">Tamaño</th>
+                  <th scope="col" class="num">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="cvOutputBody"></tbody>
+            </table>
+            <p class="output-empty" id="cvOutputEmpty">Todavía no hay resultados.</p>
+          </div>
+          <div class="output-actions">
+            <button type="button" class="btn btn-primary" id="cvDownloadAllBtn" disabled>Descargar todo</button>
+            <button type="button" class="btn btn-ghost btn-muted" id="cvDeleteAllBtn" disabled>Borrar todo</button>
+          </div>
+        </section>
+
+        <section class="output formats">
+          <span class="eyebrow">Formatos admitidos</span>
+          <div class="output-panel">
+            <table class="output-table formats-table">
+              <thead>
+                <tr>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Desde</th>
+                  <th scope="col">Hacia</th>
+                </tr>
+              </thead>
+              <tbody id="cvFormatsBody"></tbody>
+            </table>
           </div>
         </section>
       </main>

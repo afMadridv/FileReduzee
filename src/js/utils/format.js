@@ -39,5 +39,7 @@ export function triggerDownload(blob, filename) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // Revocar en el mismo tick puede cancelar la descarga en Firefox y Safari,
+  // sobre todo con varias seguidas ("Descargar todo").
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
